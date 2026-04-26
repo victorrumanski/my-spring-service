@@ -11,12 +11,10 @@ env:
   IMAGE_NAME: ${{ github.repository }}
 
 jobs:
-  build:
+  # --- JOB 1: BUILD AND TEST ---
+  # This appears as the first "card" in the GitHub Actions UI.
+  maven-build:
     runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      packages: write
-
     steps:
     - uses: actions/checkout@v4
 
@@ -29,6 +27,19 @@ jobs:
 
     - name: Build with Maven
       run: mvn -B package --file pom.xml
+
+  # --- JOB 2: DOCKER RELEASE ---
+  # This appears as the second "card", linked to the first one.
+  docker-release:
+    runs-on: ubuntu-latest
+    # This line is key: it tells GitHub not to run this job unless 'maven-build' succeeds.
+    needs: maven-build
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+    - uses: actions/checkout@v4
 
     - name: Log in to the Container registry
       uses: docker/login-action@v3
