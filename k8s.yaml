@@ -1,0 +1,135 @@
+# ---------------------------------------------------------
+# Phase 4: Spring Boot Service Kubernetes Manifests
+# This file defines the entire infrastructure for our Java app.
+# ---------------------------------------------------------
+
+# 1. NAMESPACE
+# A logical "folder" inside your cluster to group related resources.
+# We keep our apps separate from our databases (which are in 'data').
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: apps
+---
+
+# 2. DEPLOYMENT
+# This is the most important part. It manages the "state" of your app pods.
+# It ensures your requested number of pods (replicas) are always running.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: spring-service
+  namespace: apps
+spec:
+  # How many copies of the app do you want?
+  replicas: 1
+  # The selector tells the Deployment which pods it "owns"
+  selector:
+    matchLabels:
+      app: spring-service
+  # This template defines the pods that will be created
+  template:
+    metadata:
+      # Labels allow other resources (like Services) to find these pods
+      labels:
+        app: spring-service
+    spec:
+      containers:
+      - name: spring-service
+        # The image we built locally and imported into k3d
+        image: spring-service:latest
+        # IMPORTANT: 'Never' tells k3d not to look on the internet (Docker Hub)
+        # but to use the image we imported locally via 'k3d image import'.
+        imagePullPolicy: Never
+        ports:
+        - containerPort: 8080
+        
+        # ENVIRONMENT VARIABLES
+        # These are injected into the Java app's application.properties
+        env:
+        # Postgres Config: pointing to the Service in the 'data' namespace
+        - name: DB_HOST
+          value: "postgres-postgresql.data.svc.cluster.local"
+        - name: DB_NAME
+          value: "appdb"
+        - name: DB_USER
+          value: "app"
+        # SECURE PASSWORDS: We pull these from a Kubernetes Secret
+        # instead of hardcoding them in this file.
+        - name: DB_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: app-secrets
+              key: db-password
+        
+        # Kafka Config
+        - name: KAFKA_HOST
+          value: "kafka.data.svc.cluster.local"
+        - name: KAFKA_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: app-secrets
+              key: kafka-password
+              
+        # HEALTH CHECKS (PROBES)
+        # Kubernetes uses these to monitor your app's health.
+        
+        # Liveness: "Is the app crashed?" If this fails, K8s kills and restarts the pod.
+        livenessProbe:
+          httpGet:
+            path: /actuator/health
+            port: 8080
+          initialDelaySeconds: 30 # Give Spring Boot 30s to start before checking
+          periodSeconds: 10
+          
+        # Readiness: "Is the app ready for traffic?" If this fails, K8s stops sending
+        # user traffic to this pod until it recovers.
+        readinessProbe:
+          httpGet:
+            path: /actuator/health
+            port: 8080
+          initialDelaySeconds: 30
+          periodSeconds: 10
+---
+
+# 3. SERVICE
+# An "internal load balancer". It gives your pods a stable DNS name.
+# Other pods can reach this app at http://spring-service.apps.svc.cluster.local
+apiVersion: v1
+kind: Service
+metadata:
+  name: spring-service
+  namespace: apps
+spec:
+  # Find pods that have the label 'app: spring-service'
+  selector:
+    app: spring-service
+  ports:
+    - protocol: TCP
+      port: 80        # The port other pods will use to call this service
+      targetPort: 8080 # The port the actual Java app is listening on
+---
+
+# 4. INGRESS
+# The "front door". This exposes your internal Service to the outside world
+# (your browser) via the Traefik load balancer.
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: spring-ingress
+  namespace: apps
+spec:
+  ingressClassName: traefik
+  rules:
+    # This host must be reachable from your Mac. 
+    # .localtest.me always resolves to 127.0.0.1
+    - host: spring.localtest.me
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: spring-service
+                port:
+                  number: 80
