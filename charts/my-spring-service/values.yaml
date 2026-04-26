@@ -1,0 +1,20 @@
+# Values specifically for the Gateway
+common-microservice:
+  replicaCount: 1
+  image:
+    repository: ghcr.io/victorrumanski/my-spring-service
+    tag: "latest"
+  service:
+    port: 80
+    targetPort: 8080
+  env:
+    dbHost: "postgres-postgresql.data.svc.cluster.local"
+    dbName: "appdb"
+    dbUser: "app"
+    kafkaHost: "kafka.data.svc.cluster.local"
+  probes:
+    enabled: true
+  # Ingress is specific to this app
+  ingress:
+    enabled: true
+    host: "spring.localtest.me"

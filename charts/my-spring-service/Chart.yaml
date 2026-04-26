@@ -1,0 +1,15 @@
+apiVersion: v2
+name: my-spring-service
+description: Gateway microservice
+type: application
+version: 0.1.0
+appVersion: "1.0.0"
+
+# This is where the magic happens! We import the central library.
+dependencies:
+  - name: common-microservice
+    repository: "oci://ghcr.io/victorrumanski/charts"
+    version: 1.0.0
+    # 'import-values' allows us to use the library's values at the root
+    import-values:
+      - data

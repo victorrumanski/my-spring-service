@@ -1,0 +1,6 @@
+dependencies:
+- name: common-microservice
+  repository: file://../../../charts/common-microservice
+  version: 1.0.0
+digest: sha256:cea68ab2e35c4af2743ac0a566c29795277d24d4625c6e8a313c78d8bd6bcdba
+generated: "2026-04-26T11:23:18.173271-03:00"
