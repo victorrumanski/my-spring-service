@@ -6,6 +6,11 @@ on:
   pull_request:
     branches: [ "main" ]
 
+# This block is required to allow the reusable workflow to push images to GHCR.
+permissions:
+  contents: read
+  packages: write
+
 jobs:
   # This job "calls" the reusable template we created.
   call-reusable-workflow:
