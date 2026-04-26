@@ -37,10 +37,10 @@ spec:
       containers:
       - name: spring-service
         # The image we built locally and imported into k3d
-        image: spring-service:latest
+        image: ghcr.io/victorrumanski/my-spring-service:latest
         # IMPORTANT: 'Never' tells k3d not to look on the internet (Docker Hub)
         # but to use the image we imported locally via 'k3d image import'.
-        imagePullPolicy: Never
+        imagePullPolicy: Always
         ports:
         - containerPort: 8080
         
