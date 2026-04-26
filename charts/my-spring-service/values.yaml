@@ -17,4 +17,5 @@ common-microservice:
   # Ingress is specific to this app
   ingress:
     enabled: true
+    className: "traefik"
     host: "spring.localtest.me"

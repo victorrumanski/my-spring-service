@@ -8,8 +8,8 @@ appVersion: "1.0.0"
 # This is where the magic happens! We import the central library.
 dependencies:
   - name: common-microservice
-    repository: "oci://ghcr.io/victorrumanski/charts"
-    version: 1.0.0
+    repository: "oci://ghcr.io/victorrumanski"
+    version: 1.0.1
     # 'import-values' allows us to use the library's values at the root
     import-values:
       - data
